@@ -253,7 +253,8 @@ def client_handler(clientsock, client_address, clients):
 				receive_bytes = clientsock.recv(56).decode("utf-8").strip()
 				sys.stderr.write("[INFO] Received: '%s' from '%s:%s'\n" % (receive_bytes,client_address[0],client_address[1]))
 				# "Lege data" --> dode socket
-				if receive_bytes == bytes("", 'UTF-8'): # Var gebruiken ipv bytes()
+				#if receive_bytes == bytes("", 'UTF-8'): # Var gebruiken ipv bytes()
+				if not receive_bytes:
 					sys.stderr.write("[ERROR] No more data from '%s:%s'\n" % client_address)
 					break
 				# Bericht/Instructie decoden en behandelen
@@ -318,9 +319,6 @@ if __name__=='__main__':
 	# Main Thread starten
 	mthread = threading.Thread(target=mainthread, args=[threads, clients])
 	mthread.start()
-	# UDP Discovery thread starten
-	udpthread = threading.Thread(target=udp_thread,args=[])
-	udpthread.start()
 	# TCP/IP (server)socket aanmaken
 	sockobject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# Socket binden aan poort
@@ -329,6 +327,9 @@ if __name__=='__main__':
 	sys.stderr.write("[INFO] Socket starting up on '%s' port '%s'\n" % server_address)
 	# Luisteren voor inkomende connecties
 	sockobject.listen(1)
+	# UDP Discovery thread starten
+	udpthread = threading.Thread(target=udp_thread,args=[])
+	udpthread.start()
 	while True:
 		# Wachten op connectie
 		sys.stderr.write("[INFO] Waiting for connection\n")
