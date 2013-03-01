@@ -13,6 +13,7 @@
 # * https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/Multithreading/CreatingThreads/CreatingThreads.html
 # * http://www.ibm.com/developerworks/linux/tutorials/l-pysocks/section4.html
 # * http://www.doughellmann.com/PyMOTW/abc/
+# * http://code.activestate.com/recipes/577278-receive-udp-broadcasts/
 # * 
 #####################################
 # TODO: objecten gebruiken voor interthreaded communicatie (fancy)
@@ -29,7 +30,7 @@
 #			* Basic remote protocol
 #				[ ALMOST DONE ]
 #			* Basic car_v1 protocol
-#				[ TODO ]
+#				[ ALMOST DONE ]
 # TODO: } van de vorige --> Afstandbediening moet auto kunnen aansturen
 #####################################
 
@@ -285,6 +286,29 @@ def mainthread(threads, clients):
 		'''
 		time.sleep(2)
 
+def udp_thread():
+	sys.stderr.write("[INFO] UDP Thread Started\n")
+	# UDP broadcast listener
+	udp_listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	udp_listen_socket.bind(('<broadcast>', 667))
+	udp_listen_socket.setblocking(0)
+	# UDP answer socket
+	udp_send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	# ----
+	sys.stderr.write("[INFO] UDP Thread Initiated\n")
+	while True:
+		result = select.select([udp_listen_socket],[],[])
+		msg, addr = result[0][0].recvfrom(56)
+		msg = msg.decode("utf-8").strip()
+		sys.stderr.write("[INFO] UDP Data: %s from %s:%s\n" % (msg, addr[0],addr[1]))
+		if msg == "DISCOVER-CAR-SERVER":
+			sys.stderr.write("[INFO] UDP Discover from %s\n" % addr[0])
+			udp_send_socket.sendto(bytes("DISCOVERED-CAR-SERVER","UTF-8"),(addr[0],6666))
+			#Answer with connection
+
+
+
+
 #----------------------------------------------------------
 if __name__=='__main__':
 	# Threading list
@@ -294,10 +318,13 @@ if __name__=='__main__':
 	# Main Thread starten
 	mthread = threading.Thread(target=mainthread, args=[threads, clients])
 	mthread.start()
+	# UDP Discovery thread starten
+	udpthread = threading.Thread(target=udp_thread,args=[])
+	udpthread.start()
 	# TCP/IP (server)socket aanmaken
 	sockobject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# Socket binden aan poort
-	server_address = (socket.gethostname(), 666)
+	server_address = ('', 666)
 	sockobject.bind(server_address)
 	sys.stderr.write("[INFO] Socket starting up on '%s' port '%s'\n" % server_address)
 	# Luisteren voor inkomende connecties
