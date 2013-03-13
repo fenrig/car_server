@@ -214,6 +214,9 @@ class car_v1(client_base):
 	def backward(self):
 		self.send("backward")
 
+	def fbstop(self):
+		self.send("fb-stop")
+
 	def left(self):
 		self.send("left")
 

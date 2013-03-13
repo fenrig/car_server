@@ -59,15 +59,19 @@ def send():
 		message = 'forward'
 		sys.stderr.write("[INFO] Sending: '%s'\n" % message)
 		sockobject.sendall(bytes(message.ljust(56), 'UTF-8'))
-		time.sleep(2)
-		message = 'forward'
+		time.sleep(10)
+		message = 'left'
 		sys.stderr.write("[INFO] Sending: '%s'\n" % message)
 		sockobject.sendall(bytes(message.ljust(56), 'UTF-8'))
-		time.sleep(2)
+		time.sleep(10)
 		message = 'backward'
 		sys.stderr.write("[INFO] Sending: '%s'\n" % message)
 		sockobject.sendall(bytes(message.ljust(56), 'UTF-8'))
-		time.sleep(2)
+		time.sleep(10)
+		message = 'right'
+		sys.stderr.write("[INFO] Sending: '%s'\n" % message)
+		sockobject.sendall(bytes(message.ljust(56), 'UTF-8'))
+		time.sleep(10)
 
 transmit = threading.Thread(target=send)
 transmit.start()
