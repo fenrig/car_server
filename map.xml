@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<car_mapping Version="1">
+ 
+  <Node>
+    <name>A</name>
+    <x>0</x>
+    <y>0</y>
+    <o>
+      <x>3</x>
+      <y>0</y>
+    </o>
+    <s>
+      <x>0</x>
+      <y>3</y>
+    </s>
+  </Node>
+ 
+  <Node>
+    <name>B</name>
+    <x>3</x>
+    <y>0</y>
+    <s>
+      <x>3</x>
+      <y>3</y>
+    </s>
+    <w>
+      <x>0</x>
+      <y>0</y>
+    </w>
+  </Node>
+ 
+  <Node>
+    <name>C</name>
+    <x>0</x>
+    <y>3</y>
+    <n>
+      <x>0</x>
+      <y>0</y>
+    </n>
+    <o>
+      <x>3</x>
+      <y>3</y>
+    </o>
+  </Node>
+
+  <Node>
+    <name>D</name>
+    <x>3</x>
+    <y>3</y>
+    <n>
+      <x>3</x>
+      <y>0</y>
+    </n>
+    <w>
+      <x>0</x>
+      <y>3</y>
+    </w>
+  </Node>
+ 
+</car_mapping>
