@@ -183,7 +183,7 @@ def create_route_map(startnode,map):
 
 	dist[startnode] = 0
 
-	while not unvisited:
+	while unvisited:
 		shortest_node = unvisited[0]
 		for node in unvisited:
 			if dist[node] < dist[shortest_node]:
@@ -196,17 +196,19 @@ def create_route_map(startnode,map):
 			if new_distance < dist[neighbor]:
 				dist[neighbor] = new_distance
 				prev[neighbor] = shortest_node
-
 	return prev
 
 def create_route(start_node, dest_node, route_list):
+	route = [dest_node]
+
 	cur_node = dest_node
 	while cur_node is not start_node:
-		print(cur_node.name)
-		print(cur_node)
-		print(route_list[cur_node])
 		cur_node_x = route_list[cur_node]
 		cur_node   = cur_node_x
+		route.insert(0, cur_node)
+
+	return route
+	
 
 
 #############################MAIN#######################
@@ -215,9 +217,8 @@ if __name__=='__main__':
 
 	prev = create_route_map(map[0] , map)
 
-	for x in prev:
-		print(x)
-
-	create_route(map[0], map[3], prev)
+	print(map[0].name + " -> " + map[3].name + " : ")
+	for x in create_route(map[0], map[3], prev):
+		print(x.name)
 	canvas(map)
 	
