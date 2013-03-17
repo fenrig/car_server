@@ -133,8 +133,91 @@ class mapping_node(object):
 		self.loc = location(xy[0],xy[1])
 		self.connections = node_connections(nosw[0],nosw[1],nosw[2],nosw[3])	
 
+#############################ROUTING####################
+def convert_map(map):
+	distance_dict  = {}
+	previous_dict  = {}
+	unvisited_list = []
+	for v in map:
+		distance_dict[v] = float('inf')
+		previous_dict[v] = None
+		unvisited_list.append(v)
+	return distance_dict, previous_dict, unvisited_list
+
+def neighbors(node, map):
+	connection_list = []
+	if node.connections.n.is_empty() is False:
+		connection_list.append(node.connections.n)
+	if node.connections.o.is_empty() is False:
+		connection_list.append(node.connections.o)
+	if node.connections.s.is_empty() is False:
+		connection_list.append(node.connections.s)
+	if node.connections.w.is_empty() is False:
+		connection_list.append(node.connections.w)
+
+	neighbor_list = []
+	for nodex in map:
+		for conx in connection_list:
+			if nodex.loc.x == conx.x and nodex.loc.y == conx.y:
+				neighbor_list.append(nodex)
+				break
+
+	return neighbor_list
+
+def distance(nodeX,nodeY):
+	xdiff = nodeX.loc.x - nodeY.loc.x
+	if xdiff < 0: xdiff = xdiff * (-1)
+
+	ydiff = nodeX.loc.y - nodeY.loc.y
+	if ydiff < 0: ydiff = ydiff * (-1)
+
+	return (xdiff + ydiff)
+
+def create_route_map(startnode,map):
+	'''
+	Creates shortest route maps
+	-----------------------------
+	based on Dijkstra's Algorithm
+	'''
+	dist, prev, unvisited = convert_map(map)
+
+	dist[startnode] = 0
+
+	while not unvisited:
+		shortest_node = unvisited[0]
+		for node in unvisited:
+			if dist[node] < dist[shortest_node]:
+				shortest_node = node
+
+		unvisited.remove(shortest_node)
+
+		for neighbor in neighbors(shortest_node,map):
+			new_distance = dist[shortest_node] + distance(shortest_node,neighbor)
+			if new_distance < dist[neighbor]:
+				dist[neighbor] = new_distance
+				prev[neighbor] = shortest_node
+
+	return prev
+
+def create_route(start_node, dest_node, route_list):
+	cur_node = dest_node
+	while cur_node is not start_node:
+		print(cur_node.name)
+		print(cur_node)
+		print(route_list[cur_node])
+		cur_node_x = route_list[cur_node]
+		cur_node   = cur_node_x
+
+
 #############################MAIN#######################
 if __name__=='__main__':
 	map = parse_mapping_xml()
+
+	prev = create_route_map(map[0] , map)
+
+	for x in prev:
+		print(x)
+
+	create_route(map[0], map[3], prev)
 	canvas(map)
 	
