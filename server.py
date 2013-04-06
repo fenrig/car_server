@@ -41,13 +41,17 @@ import threading
 import time
 import abc
 
+import mapper
+
 #----------------------------------------------------------
 
-def identify(identifier):
+def identify(identifier, mapobject):
 	'''
 	Returned het bijhorende object bij een type die hoort bij een 
 	bepaalde bytes(string) [12 bytes -> 12 char]
 	'''
+	if identifier == bytes("car_v2      ", 'UTF-8'):
+		return car_v2(mapobject)
 	if identifier == bytes("car_v1      ", 'UTF-8'):
 		return car_v1()
 	if identifier == bytes("basic_remote", 'UTF-8'):
@@ -223,10 +227,42 @@ class car_v1(client_base):
 	def right(self):
 		self.send("right")
 
+class car_v2(client_base):
+	'''
+	Advanced voertuig
+	'''
+	def __init__(self, mapobject):
+		client_base.__init__(self)
+		self.name        = "car_v2 %i" % self.counter
+		#self.origin      = None
+		#self.destination = None
+		self.mapobject   = mapobject
+		self.origin      = mapobject.raw_map[0]
+		self.destination = mapobject.raw_map[5]
+		self.send("instructionlist_changed")
+
+	def gettype(self):
+		return "car_v2"
+
+	def decode_instruction(self, instruction):
+		if instruction == "5m":
+			print(instruction)
+		if instruction == "get_instructions":
+			instructions    = self.mapobject.instr_list(self.origin, self.destination)
+			no_instructions = len(instructions)
+
+			self.send(str(no_instructions))
+			for instruction in instructions:
+				self.send(instruction) 
+			return
+		print("Failed parsing")
+
+
+
 
 #----------------------------------------------------------
 
-def client_handler(clientsock, client_address, clients):
+def client_handler(clientsock, client_address, clients, mapobject):
 	'''
 	Client thread (momenteel universeel)
 	'''
@@ -236,7 +272,7 @@ def client_handler(clientsock, client_address, clients):
 		sys.stderr.write("[INFO] Connection with '%s' on '%s'\n" % client_address)
 		# Authenticatie gedeelte [12 bytes]
 		receive_bytes = clientsock.recv(12)
-		clientobject = identify(receive_bytes)
+		clientobject = identify(receive_bytes, mapobject)
 		if clientobject == False:
 			sys.stderr.write("[ERROR] Bad authentication with '%s:%s'\n" % client_address)
 			flag_except = False
@@ -279,6 +315,23 @@ def client_handler(clientsock, client_address, clients):
 
 #----------------------------------------------------------
 def mainthread(threads, clients):
+	'''
+	mapobject = mapper.CarMapper()
+	print(mapobject.raw_map[0].name + " --> " + mapobject.raw_map[6].name)
+	for i in mapobject.instr_list(mapobject.raw_map[0],mapobject.raw_map[6]):
+		print(i)
+	mapper.canvas(mapobject.raw_map)
+	'''
+	'''
+	prev = mapper.create_route_map(map[0] , map)
+
+	print(map[0].name + " -> " + map[9].name + " : ")
+	for x in mapper.create_route(map[0], map[9], prev):
+		print(x.name)
+	
+	mapper.canvas(map)
+	'''
+
 	while True:
 		# Test code. Hiervan moeten berichten worden naartoe ge-offload en ge-upload (56 bytes per bericht)
 		'''
@@ -322,6 +375,8 @@ if __name__=='__main__':
 	# Main Thread starten
 	mthread = threading.Thread(target=mainthread, args=[threads, clients])
 	mthread.start()
+	# Mapper opstarten
+	mapobject = mapper.CarMapper()
 	# TCP/IP (server)socket aanmaken
 	sockobject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# Socket binden aan poort
@@ -339,5 +394,5 @@ if __name__=='__main__':
 		connection, client_address = sockobject.accept()
 		sys.stderr.write("[INFO] Establishing connection with '%s' on '%s'\n" % client_address)
 		# Thread starten en aan een lijst toevoegen
-		threads.append(threading.Thread(target=client_handler, args=[connection, client_address,clients]))
+		threads.append(threading.Thread(target=client_handler, args=[connection, client_address,clients,mapobject]))
 		threads[len(threads) - 1].start()

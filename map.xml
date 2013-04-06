@@ -41,6 +41,10 @@
       <x>3</x>
       <y>3</y>
     </o>
+    <s>
+      <x>0</x>
+      <y>6</y>
+    </s>
   </Node>
 
   <Node>
@@ -54,6 +58,98 @@
     <w>
       <x>0</x>
       <y>3</y>
+    </w>
+    <s>
+      <x>3</x>
+      <y>6</y>
+    </s>
+  </Node>
+
+  <Node>
+    <name>E</name>
+    <x>3</x>
+    <y>6</y>
+    <n>
+      <x>3</x>
+      <y>3</y>
+    </n>
+    <s>
+      <x>3</x>
+      <y>9</y>
+    </s>
+    <w>
+      <x>0</x>
+      <y>6</y>
+    </w>
+  </Node>
+
+  <Node>
+    <name>F</name>
+    <x>3</x>
+    <y>9</y>
+    <n>
+      <x>3</x>
+      <y>6</y>
+    </n>
+    <o>
+      <x>7</x>
+      <y>9</y>
+    </o>
+  </Node>
+
+  <Node>
+    <name>G</name>
+    <x>7</x>
+    <y>3</y>
+    <w>
+      <x>3</x>
+      <y>3</y>
+    </w>
+    <s>
+      <x>7</x>
+      <y>9</y>
+    </s>
+  </Node>
+
+  <Node>
+    <name>H</name>
+    <x>0</x>
+    <y>6</y>
+    <n>
+      <x>0</x>
+      <y>3</y>
+    </n>
+    <o>
+      <x>3</x>
+      <y>6</y>
+    </o>
+  </Node>
+
+  <Node>
+    <name>I</name>
+    <x>7</x>
+    <y>9</y>
+    <n>
+      <x>7</x>
+      <y>3</y>
+    </n>
+    <w>
+      <x>3</x>
+      <y>9</y>
+    </w>
+    <o>
+      <x>8</x>
+      <y>9</y>
+    </o>
+  </Node>
+
+  <Node>
+    <name>J</name>
+    <x>8</x>
+    <y>9</y>
+    <w>
+      <x>7</x>
+      <y>9</y>
     </w>
   </Node>
  
