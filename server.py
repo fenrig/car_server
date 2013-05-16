@@ -220,7 +220,7 @@ class car_v1(client_base):
 
     def forward(self):
         self.send("forward")
-
+        
     def backward(self):
         self.send("backward")
 
@@ -243,20 +243,74 @@ class advanced_remote(client_base):
         self.name = "advanced_remote %i" % self.counter
         self.mapobject = mapobject
         self.clients = clients
+        self.flags = 0
+        self.controlled_car = None
 
     def gettype(self):
         return "advanced_remote"
 
     def decode_instruction(self, instruction):
-        if instruction == "getCar_V2":
+        if self.flags == 1:
+            self.flags = 0
+            for client in self.clients:
+                if type(client) == car_v2:
+                    if client.name == instruction:
+                        if client.locked is False:
+                            self.controlled_car = client
+                            sys.stderr.write("[INFO] '%s' (advanced_remote) controls '%s'\n" % (self.name, client.name))
+                            self.send("set_car succeeded")
+                            return
+                        else:
+                            sys.stderr.write("[INFO] '%s' is locked\n" % (client.name))
+                            self.send("set_car failed")
+            sys.stderr.write("[INFO] '%s' (advanced_remote) cannot control '%s'\n" % (self.name, instruction))
+            self.send("set_car failed")
+        elif self.flags == 2:
+            self.flags = 0
+            for node in self.mapobject.raw_map:
+                if node.name == instruction:
+                    self.controlled_car.origin = node
+                    self.send("set_origin succeeded")
+                    return
+            self.send("set_origin failed")
+        elif self.flags == 3:
+            self.flags = 0
+            for node in self.mapobject.raw_map:
+                if node.name == instruction:
+                    self.controlled_car.destination = node
+                    self.send("set_destination succeeded")
+                    if self.controlled_car.origin is not None:
+                        self.controlled_car.emitInstructionListChanged()
+                    return
+            self.send("set_destination failed")
+        elif instruction == "getCar_V2":
             cars = []
-            for client in clients:
-                if client.gettype == "car_v2":
+            for client in self.clients:
+                if type(client) == car_v2:
                     cars.append(client)
-
-            self.send("cars: " + str(len(cars)))
-            for car in cars:
-                self.send(car.name)
+            if len(cars) == 0:
+                string = "-"
+            else:
+                string = ""
+                for car in cars:
+                    string = string + car.name + ";"
+            self.send(string)
+        elif instruction == "set_car":
+            self.flags = 1
+        elif instruction == "get_nodes":
+            if len(self.mapobject.raw_map) == 0:
+                string = "-"
+            else:
+                string = ""
+                for node in self.mapobject.raw_map:
+                    string = string + node.name + ";"
+            self.send(string)
+        elif instruction == "set_origin":
+            self.flags = 2
+        elif instruction == "set_destination":
+            self.flags = 3
+        elif instruction == "lock":
+            self.controlled_car.lock()
 
 
 class car_v2(client_base):
@@ -266,12 +320,13 @@ class car_v2(client_base):
     def __init__(self, mapobject):
         client_base.__init__(self)
         self.name = "car_v2 %i" % self.counter
-        # self.origin = None
-        # self.destination = None
+        self.origin = None
+        self.destination = None
         self.mapobject = mapobject
-        self.origin      = mapobject.raw_map[0]
-        self.destination = mapobject.raw_map[5]
-        self.emitInstructionListChanged()
+        self.locked = False
+        # self.origin = mapobject.raw_map[0]
+        # self.destination = mapobject.raw_map[5]
+        # self.emitInstructionListChanged()
 
     def gettype(self):
         return "car_v2"
@@ -292,6 +347,12 @@ class car_v2(client_base):
 
     def emitInstructionListChanged(self):
         self.send("instructionlist_changed")
+
+    def lock(self):
+        if self.locked is False:
+            self.locked = True
+        else:
+            self.locked = False
 
 
 #----------------------------------------------------------
@@ -314,7 +375,7 @@ def client_handler(clientsock, client_address, clients, mapobject):
         clients.append(clientobject)
 # ------- deel maken van het object --> "basic remote"
         # Remote doen kiezen welke auto er bestuurd wordt
-        if clientobject.gettype() == "basic_remote":
+        if clientobject.gettype() == "advan_remote":
             clientobject.send_clients(clientsock, clients)
             clientobject.get_client(clientsock, clients)
 # -------
