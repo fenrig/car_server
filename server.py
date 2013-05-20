@@ -220,7 +220,7 @@ class car_v1(client_base):
 
     def forward(self):
         self.send("forward")
-        
+    
     def backward(self):
         self.send("backward")
 
@@ -324,9 +324,6 @@ class car_v2(client_base):
         self.destination = None
         self.mapobject = mapobject
         self.locked = False
-        # self.origin = mapobject.raw_map[0]
-        # self.destination = mapobject.raw_map[5]
-        # self.emitInstructionListChanged()
 
     def gettype(self):
         return "car_v2"
@@ -335,13 +332,14 @@ class car_v2(client_base):
         if instruction == "5m":
             print(instruction)
         if instruction == "get_instructions":
+            if self.origin == self.destination:
+                self.send("n;s;n;w;n;e;s;w;e;w;s;e;n")
+                return
             instructions = self.mapobject.instr_list(self.origin, self.destination)
-            #self.send("instructions: " + str(len(instructions)))
             string = ""
             for instruction in instructions:
                 string = string + str(instruction[0]) + ";"
-            #self.send(string)
-            self.send("n;s;n;w;n;e;s;w;e;w;s;e;n")
+            self.send(string)
             return
         print("Failed parsing")
 
