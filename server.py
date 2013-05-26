@@ -25,13 +25,14 @@
 # TODO: Classes opschonen, mogelijk maken van remote en car object
 #       [ DONE ]
 # TODO: Eigen protocol produceren
-#       [ PARTIALLY ]
+#       [ DONE ]
 #           * Authenticatie protocol
 #           * Basic remote protocol
-#               [ ALMOST DONE ]
+#               [ DONE ]
 #           * Basic car_v1 protocol
-#               [ ALMOST DONE ]
+#               [ DONE ]
 # TODO: } van de vorige --> Afstandbediening moet auto kunnen aansturen
+#       [ DONE ]
 #####################################
 
 import socket
@@ -56,7 +57,7 @@ def identify(identifier, mapobject, clients):
     if identifier == bytes("car_v1      ", 'UTF-8'):
         return car_v1()
     if identifier == bytes("basic_remote", 'UTF-8'):
-        return basic_remote()
+        return basic_remote(clients)
     if identifier == bytes("advan_remote", 'UTF-8'):
         return advanced_remote(mapobject, clients)
     return False
@@ -124,11 +125,14 @@ class basic_remote(client_base):
     '''
     Afstandbediening (basic version)
     '''
-    def __init__(self):
+    def __init__(self, clients):
         # Constructor base class callen
         client_base.__init__(self)
         # Derived class constructen
         self.name = "basic_remote %i" % self.counter
+        self.clients = clients
+        self.clientobject = None
+        self.flags = 0
 
     def set_clientobject(self, clientobjectx):
         # Clientobject (te besturen client) instellen
@@ -139,14 +143,26 @@ class basic_remote(client_base):
 
     def decode_instruction(self, instruction):
         # TODO: Afwerken eenmaals car_v1 "werkt"
+        if self.flags == 1:
+            self.flags = 0
+            for client in self.clients:
+                if type(client) == car_v1:
+                    if client.name == instruction:
+                        self.clientobject = client
+                        sys.stderr.write("[INFO] '%s' (advanced_remote) controls '%s'\n" % (self.name, client.name))
+                        self.send("set_car succeeded")
+                        return
+            sys.stderr.write("[INFO] '%s' (advanced_remote) cannot control '%s'\n" % (self.name, instruction))
+            self.send("set_car failed")
+            return
         if instruction == "forward":
             self.clientobject.forward()
             return
         if instruction == "backward":
             self.clientobject.backward()
             return
-        if instruction == "horizontal_stop":
-            sys.stderr.write(str(instruction) + "\n")
+        if instruction == "fb-stop":
+            self.clientobject.fbstop()
             return
         if instruction == "left":
             self.clientobject.left()
@@ -154,8 +170,25 @@ class basic_remote(client_base):
         if instruction == "right":
             self.clientobject.right()
             return
-        if instruction == "vertical_stop":
-            sys.stderr.write(str(instruction) + "\n")
+        if instruction == "lr-stop":
+
+            self.clientobject.lrstop()
+            return
+        if instruction == "get_clients":
+            cars = []
+            for client in self.clients:
+                if type(client) == car_v1:
+                    cars.append(client)
+            if len(cars) == 0:
+                string = "-"
+            else:
+                string = ""
+                for car in cars:
+                    string = string + car.name + ";"
+            self.send(string)
+            return
+        if instruction == "set_car":
+            self.flags = 1
             return
 
     def send_clients(self, clientsock, clients):
@@ -226,6 +259,9 @@ class car_v1(client_base):
 
     def fbstop(self):
         self.send("fb-stop")
+
+    def lrstop(self):
+        self.send("lr-stop")
 
     def left(self):
         self.send("left")
@@ -310,7 +346,8 @@ class advanced_remote(client_base):
         elif instruction == "set_destination":
             self.flags = 3
         elif instruction == "lock":
-            self.controlled_car.lock()
+            if self.controlled_car is not None:
+                self.controlled_car.lock()
 
 
 class car_v2(client_base):
@@ -329,9 +366,11 @@ class car_v2(client_base):
         return "car_v2"
 
     def decode_instruction(self, instruction):
-        if instruction == "5m":
-            print(instruction)
         if instruction == "get_instructions":
+            # Puur voor debug ;-) das de perfecte debug map want alle combinaties komen voor
+            if self.origin is None or self.destination is None:
+                self.send("-")
+                return
             if self.origin == self.destination:
                 self.send("n;s;n;w;n;e;s;w;e;w;s;e;n")
                 return
@@ -341,7 +380,7 @@ class car_v2(client_base):
                 string = string + str(instruction[0]) + ";"
             self.send(string)
             return
-        print("Failed parsing")
+        sys.stderr.write("[ERROR] Cannot parse route for '%s'\n" % self.name)
 
     def emitInstructionListChanged(self):
         self.send("instructionlist_changed")
@@ -373,9 +412,11 @@ def client_handler(clientsock, client_address, clients, mapobject):
         clients.append(clientobject)
 # ------- deel maken van het object --> "basic remote"
         # Remote doen kiezen welke auto er bestuurd wordt
+        '''
         if clientobject.gettype() == "advan_remote":
             clientobject.send_clients(clientsock, clients)
             clientobject.get_client(clientsock, clients)
+        '''
 # -------
         # Client loop
         while True:
